@@ -1,5 +1,5 @@
 import FileCopyIcon from '@mui/icons-material/FileCopy';
-import { Alert, AlertTitle, IconButton, Tooltip } from '@mui/material';
+import { Alert, AlertTitle, IconButton, Tooltip, Button } from '@mui/material';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
@@ -64,6 +64,23 @@ const LoginContent = ({
                 isInitiating={isInitiating}
                 account={account}
               />
+            </Box>
+            <Box mt={2} mb={2}>
+              <Button
+                variant="contained"
+                color="secondary"
+                fullWidth
+                onClick={() => {
+                  (window as any).bypassLogin();
+                }}
+                style={{
+                  background: 'linear-gradient(135deg, #af6025 0%, #ebd26b 100%)',
+                  color: '#000000',
+                  fontWeight: 'bold',
+                }}
+              >
+                跳过登录 (开发者模式) / Bypass Login (Dev Mode)
+              </Button>
             </Box>
             <Box mb={2} mt={2}>
               <Typography variant="body2">{t('title.redirect_not_working')}</Typography>

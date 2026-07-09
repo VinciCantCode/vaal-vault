@@ -38,6 +38,12 @@ export class AccountStore {
       this.handleAuthCallback(code, error);
     });
 
+    if (typeof window !== 'undefined') {
+      (window as any).bypassLogin = () => {
+        this.bypassLogin();
+      };
+    }
+
     // Generate initial PKCE values for fallback copy link
     this.codeVerifier = generateCodeVerifier();
     generateCodeChallenge(this.codeVerifier).then((challenge) => {
@@ -404,5 +410,232 @@ export class AccountStore {
     this.rootStore.uiStateStore.setValidating(false);
     this.rootStore.uiStateStore.setSubmitting(false);
     this.rootStore.uiStateStore.setValidated(false);
+  }
+
+  @action
+  bypassLogin() {
+    // 1. Create dummy account
+    const dummyAccount = this.addOrUpdateAccount('VaalVaultTesterAccount');
+    this.selectAccountByName('VaalVaultTesterAccount');
+
+    // 2. Mock a character list
+    const mockChar: any = {
+      id: 'dummy-char-id',
+      name: 'VaalVault_Ranger',
+      class: 'Ranger',
+      level: 92,
+      experience: 2500000000,
+      league: 'Standard',
+      equipment: [
+        {
+          id: 'helmet-1',
+          verified: true,
+          w: 2,
+          h: 2,
+          ilvl: 85,
+          icon:
+            'https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQXJtb3Vycy9IZWxtZXRzL0hlbG1ldExlYXRoZXIxIiwidyI6MiwiaCI6Miwic2NhbGUiOjF9XQ/05f27571b7/HelmetLeather1.png',
+          league: 'Standard',
+          sockets: [],
+          name: 'Crown of the Pale King',
+          shaper: false,
+          elder: false,
+          baseType: 'Hubris Circlet',
+          fractured: false,
+          synthesised: false,
+          typeLine: 'Hubris Circlet',
+          identified: true,
+          corrupted: false,
+          lockedToCharacter: false,
+          requirements: [],
+          implicitMods: ['10% increased Mana Reservation Efficiency'],
+          explicitMods: [
+            '+95 to maximum Life',
+            '+42% to Lightning Resistance',
+            '+38% to Cold Resistance',
+          ],
+          frameType: 3, // Unique
+          x: 0,
+          y: 0,
+          inventoryId: 'Helmet',
+          socketedItems: [
+            {
+              id: 'gem-1',
+              verified: true,
+              w: 1,
+              h: 1,
+              ilvl: 20,
+              icon:
+                'https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvR2Vtcy9BY3RpdmUvRmlyZWJhbGwiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MX1d/f4b16a24be/Fireball.png',
+              name: '',
+              typeLine: 'Fireball',
+              corrupted: false,
+              lockedToCharacter: false,
+              category: { gems: ['active', 'spell'], jewels: [] },
+              requirements: [],
+              nextLevelRequirements: [],
+              explicitMods: [],
+              frameType: 0,
+              x: 0,
+              y: 0,
+              properties: [],
+              additionalProperties: [],
+              descrText: '',
+              secDescrText: '',
+              socket: 0,
+            },
+            {
+              id: 'gem-2',
+              verified: true,
+              w: 1,
+              h: 1,
+              ilvl: 20,
+              icon:
+                'https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvR2Vtcy9TdXBwb3J0L1N1cHBvcnRTcGVsbEVjaG8iLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MX1d/f6b0f3408f/SupportSpellEcho.png',
+              name: '',
+              typeLine: 'Spell Echo Support',
+              corrupted: false,
+              lockedToCharacter: false,
+              category: { gems: ['support', 'spell'], jewels: [] },
+              requirements: [],
+              nextLevelRequirements: [],
+              explicitMods: [],
+              frameType: 0,
+              x: 0,
+              y: 0,
+              properties: [],
+              additionalProperties: [],
+              descrText: '',
+              secDescrText: '',
+              socket: 1,
+            },
+          ],
+          properties: [],
+          flavourText: [],
+          craftedMods: [],
+          enchantMods: [],
+          utilityMods: [],
+          descrText: '',
+          prophecyText: '',
+          socket: 0,
+        },
+        {
+          id: 'weapon-1',
+          verified: true,
+          w: 2,
+          h: 4,
+          ilvl: 86,
+          icon:
+            'https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvV2VhcG9ucy9Ud29IYW5kV2VhcG9ucy9Cb3dzL0JvdzhVbmlxdWUiLCJ3IjoyLCJoIjo0LCJzY2FsZSI6MX1d/095de67f4c/Bow8Unique.png',
+          league: 'Standard',
+          sockets: [],
+          name: 'Windripper',
+          shaper: false,
+          elder: false,
+          baseType: 'Imperial Bow',
+          fractured: false,
+          synthesised: false,
+          typeLine: 'Imperial Bow',
+          identified: true,
+          corrupted: false,
+          lockedToCharacter: false,
+          requirements: [],
+          implicitMods: [],
+          explicitMods: [
+            'Adds 42 to 78 Cold Damage',
+            'Adds 6 to 125 Lightning Damage',
+            '15% increased Attack Speed',
+            '15% increased Item Quantity from Frozen Enemies',
+          ],
+          frameType: 3, // Unique
+          x: 0,
+          y: 0,
+          inventoryId: 'Weapon1',
+          socketedItems: [],
+          properties: [],
+          flavourText: [],
+          craftedMods: [],
+          enchantMods: [],
+          utilityMods: [],
+          descrText: '',
+          prophecyText: '',
+          socket: 0,
+        },
+        {
+          id: 'flask-1',
+          verified: true,
+          w: 1,
+          h: 2,
+          ilvl: 80,
+          icon:
+            'https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvRmxhc2tzL3VuaXF1ZV9kaXZpbmVfbGlmZV9mbGFzayIsInciOjEsImgiOjIsInNjYWxlIjoxfV0/14f6b31e9c/unique_divine_life_flask.png',
+          league: 'Standard',
+          sockets: [],
+          name: 'Forbidden Taste',
+          shaper: false,
+          elder: false,
+          baseType: 'Quartz Flask',
+          fractured: false,
+          synthesised: false,
+          typeLine: 'Quartz Flask',
+          identified: true,
+          corrupted: false,
+          lockedToCharacter: false,
+          requirements: [],
+          implicitMods: [],
+          explicitMods: [
+            'Recovers 95% of Life on Use',
+            'You take 8% of your maximum Life as Chaos Damage per second during Effect',
+          ],
+          frameType: 3,
+          x: 0,
+          y: 0,
+          inventoryId: 'Flask1',
+          socketedItems: [],
+          properties: [],
+          flavourText: [],
+          craftedMods: [],
+          enchantMods: [],
+          utilityMods: [],
+          descrText: '',
+          prophecyText: '',
+          socket: 0,
+        },
+      ],
+      passives: {
+        hashes: [
+          1201,
+          1402,
+          1603,
+          1804,
+          2005,
+          2206,
+          2407,
+          2608,
+          2809,
+          3010,
+          3211,
+          3412,
+          3613,
+          3814,
+          4015,
+        ],
+      },
+    };
+
+    dummyAccount.updateAccountLeagues([mockChar]);
+
+    // 3. Set validated and mock token
+    this.token = {
+      accessToken: 'dummy-token',
+      tokenType: 'bearer',
+      scope: 'account:profile account:characters',
+      expires: new Date(new Date().getTime() + 3600 * 24 * 1000),
+    };
+    this.rootStore.uiStateStore.setValidated(true);
+    this.rootStore.uiStateStore.setProfilesLoaded(true);
+
+    // 4. Redirect
+    this.rootStore.routeStore.redirect('/character');
   }
 }
