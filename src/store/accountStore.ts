@@ -16,6 +16,7 @@ import { IToken } from '../interfaces/token.interface';
 import { externalService } from '../services/external.service';
 import { getCharacterLeagues } from '../utils/league.utils';
 import { openCustomLink } from '../utils/window.utils';
+import { generateCodeVerifier, generateCodeChallenge } from '../utils/pkce.utils';
 import { electronService } from './../services/electron.service';
 import { Account } from './domains/account';
 import { RootStore } from './rootStore';
@@ -26,6 +27,8 @@ export class AccountStore {
   @persist('object') @observable token: IToken | undefined = undefined;
   @observable code: string = '';
   @observable authState: string = uuidv4();
+  @observable codeVerifier: string = '';
+  @observable codeChallenge: string = '';
 
   cancelledRetry: Subject<boolean> = new Subject();
 
@@ -33,6 +36,14 @@ export class AccountStore {
     makeObservable(this);
     electronService.ipcRenderer.on('auth-callback', (_event, { code, error }) => {
       this.handleAuthCallback(code, error);
+    });
+
+    // Generate initial PKCE values for fallback copy link
+    this.codeVerifier = generateCodeVerifier();
+    generateCodeChallenge(this.codeVerifier).then((challenge) => {
+      runInAction(() => {
+        this.codeChallenge = challenge;
+      });
     });
 
     autorun(() => {
@@ -53,15 +64,14 @@ export class AccountStore {
   @computed
   get authUrl(): string {
     const options = {
-      clientId: 'exilencece',
-      scopes: 'account:stashes account:profile account:characters', // Scopes limit access for OAuth tokens.
+      clientId: AppConfig.clientId,
+      scopes: 'account:profile account:characters',
       redirectUrl: AppConfig.redirectUrl,
       state: this.authState,
       responseType: 'code',
-      token: '',
     };
 
-    return `https://www.pathofexile.com/oauth/authorize?client_id=${options.clientId}&response_type=${options.responseType}&scope=${options.scopes}&state=${options.state}&redirect_uri=${options.redirectUrl}`;
+    return `https://www.pathofexile.com/oauth/authorize?client_id=${options.clientId}&response_type=${options.responseType}&scope=${options.scopes}&state=${options.state}&redirect_uri=${options.redirectUrl}&code_challenge=${this.codeChallenge}&code_challenge_method=S256`;
   }
 
   @action
@@ -116,19 +126,28 @@ export class AccountStore {
   }
 
   @action
-  loadOAuthPage() {
+  async loadOAuthPage() {
+    electronService.ipcRenderer.send('start-oauth-server');
+
+    this.codeVerifier = generateCodeVerifier();
+    this.codeChallenge = await generateCodeChallenge(this.codeVerifier);
+
     openCustomLink(this.authUrl);
   }
 
   @action
   loginWithOAuth(code: string) {
+    electronService.ipcRenderer.send('stop-oauth-server');
+
     fromStream(
-      externalService.loginWithOAuth(code).pipe(
-        map((res: AxiosResponse<IOAuthResponse>) => {
-          this.loginWithOAuthSuccess(res.data);
-        }),
-        catchError((e: AxiosError) => of(this.loginWithOAuthFail(e)))
-      )
+      externalService
+        .loginWithOAuth(code, this.codeVerifier, AppConfig.clientId, AppConfig.redirectUrl)
+        .pipe(
+          map((res: AxiosResponse<IOAuthResponse>) => {
+            this.loginWithOAuthSuccess(res.data);
+          }),
+          catchError((e: AxiosError) => of(this.loginWithOAuthFail(e)))
+        )
     );
   }
 
@@ -173,6 +192,7 @@ export class AccountStore {
 
   @action
   loginWithOAuthFail(e?: AxiosError) {
+    electronService.ipcRenderer.send('stop-oauth-server');
     this.rootStore.notificationStore.createNotification('login_with_oauth', 'error', true, e);
     this.rootStore.routeStore.redirect('/login');
   }

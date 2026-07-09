@@ -3,13 +3,12 @@ import { action, computed, makeObservable, observable, runInAction } from 'mobx'
 import { persist } from 'mobx-persist';
 import { fromStream } from 'mobx-utils';
 import { of, Subject, throwError, timer } from 'rxjs';
-import { catchError, map, mergeMap, retryWhen, switchMap, takeUntil } from 'rxjs/operators';
+import { catchError, map, retryWhen, switchMap, takeUntil } from 'rxjs/operators';
 import { v4 as uuidv4 } from 'uuid';
 import { IAccount } from '../../interfaces/account.interface';
 import { IApiAccount } from '../../interfaces/api/api-account.interface';
 import { IApiProfile } from '../../interfaces/api/api-profile.interface';
 import { ICharacter } from '../../interfaces/character.interface';
-import { authService } from '../../services/auth.service';
 import { mapProfileToApiProfile } from '../../utils/profile.utils';
 import { genericRetryStrategy } from '../../utils/rxjs.utils';
 import { rootStore, visitor } from './../../index';
@@ -175,38 +174,22 @@ export class Account implements IAccount {
 
   @action
   authorize() {
-    return authService
-      .getToken({
-        uuid: this.uuid,
-        name: this.name!,
-        accessToken: rootStore.accountStore.token!.accessToken,
-        profiles: [],
+    // For local decentralized mode, bypass Exilence CE central backend and SignalR group synchronization
+    return of({}).pipe(
+      map(() => {
+        // If there are no local profiles, create a default one later
+        if (this.profiles.length > 0) {
+          rootStore.uiStateStore.setProfilesLoaded(true);
+        }
+      }),
+      switchMap(() => {
+        return of(this.authorizeSuccess());
+      }),
+      catchError((e) => {
+        this.authorizeFail(e);
+        return throwError(e);
       })
-      .pipe(
-        mergeMap((account) => {
-          this.updateAccountFromApi(account.data);
-          return !rootStore.signalrHub.connection
-            ? rootStore.signalrHub.startConnection(account.data.accessToken)
-            : of({});
-        }),
-        mergeMap(() => {
-          return this.getProfilesForAccount(this.name!).pipe(
-            map((profiles: IApiProfile[]) => {
-              this.updateProfiles(profiles);
-              if (this.profiles.length > 0) {
-                rootStore.uiStateStore.setProfilesLoaded(true);
-              }
-            })
-          );
-        }),
-        switchMap(() => {
-          return of(this.authorizeSuccess());
-        }),
-        catchError((e) => {
-          this.authorizeFail(e);
-          return throwError(e);
-        })
-      );
+    );
   }
 
   @action

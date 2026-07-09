@@ -31,8 +31,25 @@ function getLatestRelease() {
   );
 }
 
-function loginWithOAuth(code: string): Observable<AxiosResponse<any>> {
-  return axios.get(`${AppConfig.baseUrl}/api/authentication/oauth2?code=${code}`);
+function loginWithOAuth(
+  code: string,
+  codeVerifier: string,
+  clientId: string,
+  redirectUri: string
+): Observable<AxiosResponse<any>> {
+  const params = new URLSearchParams();
+  params.append('client_id', clientId);
+  params.append('grant_type', 'authorization_code');
+  params.append('code', code);
+  params.append('redirect_uri', redirectUri);
+  params.append('scope', 'account:profile account:characters');
+  params.append('code_verifier', codeVerifier);
+
+  return axios.post('https://www.pathofexile.com/oauth/token', params.toString(), {
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+  });
 }
 /* #endregion */
 

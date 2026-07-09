@@ -16,6 +16,9 @@ declare global {
 function getTranslationPath(lng: string, ns: string) {
   const isWin = window.OsDetection.isWin();
   const langPath = `/i18n/${lng}/${ns}.json`;
+  if (!AppConfig.production) {
+    return langPath;
+  }
   const fullPath = url.format({
     pathname: path.join(
       electronService.appPath,
@@ -24,7 +27,7 @@ function getTranslationPath(lng: string, ns: string) {
     protocol: 'file:',
     slashes: true,
   });
-  return AppConfig.production ? fullPath : path.resolve(electronService.appPath, langPath);
+  return fullPath;
 }
 
 function configureI18n() {

@@ -3,6 +3,8 @@ import * as path from 'path';
 import * as isDev from 'electron-is-dev';
 import * as sentry from '@sentry/electron';
 import * as windowStateKeeper from 'electron-window-state';
+import * as http from 'http';
+import * as url from 'url';
 
 import {
   createFlashFrame,
@@ -123,6 +125,99 @@ function createWindow() {
       appPath,
       appLocale,
     };
+  });
+
+  /**
+   * Local HTTP Loopback OAuth Server
+   */
+  let oauthServer: http.Server | null = null;
+
+  ipcMain.on('start-oauth-server', () => {
+    if (oauthServer) {
+      try {
+        oauthServer.close();
+      } catch (err) {}
+      oauthServer = null;
+    }
+
+    oauthServer = http.createServer((req, res) => {
+      const reqUrl = req.url || '';
+      const parsedUrl = url.parse(reqUrl, true);
+
+      if (parsedUrl.pathname === '/callback') {
+        const code = (parsedUrl.query.code as string) || null;
+        const error = (parsedUrl.query.error as string) || null;
+
+        if (browserWindows[MAIN_BROWSER_WINDOW]) {
+          browserWindows[MAIN_BROWSER_WINDOW].webContents.send('auth-callback', { code, error });
+        }
+
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Authorization Successful</title>
+            <style>
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                background-color: #1a1a1a;
+                color: #ffffff;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 100vh;
+                margin: 0;
+              }
+              .container {
+                text-align: center;
+                padding: 2rem;
+                background: #2b2b2b;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+              }
+              h1 { color: #f0c05a; margin-bottom: 1rem; }
+              p { font-size: 1.1rem; color: #cccccc; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1>授权成功 / Authorization Successful</h1>
+              <p>您已成功绑定 Vaal Vault。现在可以关闭此浏览器窗口并返回应用。</p>
+              <p>You have successfully authorized Vaal Vault. You can close this window now.</p>
+            </div>
+          </body>
+          </html>
+        `);
+
+        setTimeout(() => {
+          if (oauthServer) {
+            oauthServer.close();
+            oauthServer = null;
+          }
+        }, 1000);
+      } else {
+        res.writeHead(404);
+        res.end();
+      }
+    });
+
+    oauthServer.listen(8080, '127.0.0.1', () => {
+      console.log(
+        '[Electron OAuth] Local loopback server listening on http://127.0.0.1:8080/callback'
+      );
+    });
+  });
+
+  ipcMain.on('stop-oauth-server', () => {
+    if (oauthServer) {
+      try {
+        oauthServer.close();
+      } catch (err) {}
+      oauthServer = null;
+      console.log('[Electron OAuth] Local loopback server stopped');
+    }
   });
 
   /**
