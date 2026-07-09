@@ -38,13 +38,11 @@ function loginWithOAuth(code: string): Observable<AxiosResponse<any>> {
 
 /* #region pathofexile.com */
 function getStashTab(league: string, id: string, realm: string = 'poe2'): Observable<AxiosResponse<IStashTabResponse>> {
-  const parameters = `?realm=${realm}`;
-  return axios.get<IStashTabResponse>(`${apiUrl}/stash/${league}/${id}${parameters}`);
+  return axios.get<IStashTabResponse>(`${apiUrl}/stash/${realm}/${league}/${id}`);
 }
 
 function getStashTabs(league: string, realm: string = 'poe2'): Observable<AxiosResponse<IStash>> {
-  const parameters = `?realm=${realm}`;
-  return axios.get<IStash>(`${apiUrl}/stash/${league}${parameters}`);
+  return axios.get<IStash>(`${apiUrl}/stash/${realm}/${league}`);
 }
 
 function getStashTabWithChildren(
@@ -163,13 +161,11 @@ function getLeagues(
 }
 
 function getCharacters(realm: string = 'poe2'): Observable<AxiosResponse<ICharacterListResponse>> {
-  const parameters = `?realm=${realm}`;
-  return axios.get<ICharacterListResponse>(`${apiUrl}/character${parameters}`);
+  return axios.get<ICharacterListResponse>(`${apiUrl}/character/${realm}`);
 }
 
 function getCharacter(character: string, realm: string = 'poe2'): Observable<AxiosResponse<ICharacterResponse>> {
-  const parameters = `?realm=${realm}`;
-  return axios.get<ICharacterResponse>(`${apiUrl}/character/${character}${parameters}`);
+  return axios.get<ICharacterResponse>(`${apiUrl}/character/${realm}/${character}`);
 }
 
 function getProfile(realm: string = 'poe2'): Observable<AxiosResponse<IPoeProfile>> {
